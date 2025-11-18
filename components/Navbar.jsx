@@ -26,8 +26,8 @@ const Navbar = () =>{
                             Get Started
                         </Button>
                     </Link>
-                </SignedOut>
-                <SignedIn>
+                    </SignedOut>
+                    <SignedIn>
                     <UserButton />
                 </SignedIn>
             </div>
