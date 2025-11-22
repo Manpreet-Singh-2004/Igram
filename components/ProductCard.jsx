@@ -12,7 +12,7 @@ export default function ProductCard() {
   };
 
   return (
-    <div className="max-w-xs rounded overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
+    <div className="max-w-xs rounded overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-800">
       <img
         className="w-full h-48 object-cover"
         src={product.image}
@@ -20,7 +20,7 @@ export default function ProductCard() {
       />
       <div className="px-4 py-2">
         <h2 className="font-bold text-xl mb-1">{product.name}</h2>
-        <p className="text-gray-600 text-sm">{product.description}</p>
+        <p className="text-sm">{product.description}</p>
         <div className="mt-2 flex items-center justify-between">
           <span className="text-lg font-semibold">${product.price}</span>
           <Button>
