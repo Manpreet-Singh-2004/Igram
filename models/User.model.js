@@ -45,7 +45,7 @@ const UserSchema = new mongoose.Schema(
         ],
         sellerProfile: {
             businessName: String,
-            businessAddress: String,
+            businessAddress: AddressSchema,
         },
     },
     {timestamps: true}

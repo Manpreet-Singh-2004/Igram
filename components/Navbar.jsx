@@ -21,7 +21,7 @@ const Navbar = () =>{
             </Link>
             <div className='flex items-center py-7 px-5 justify-end gap-5'>
                 <SignedOut>
-                    <Link href={'/sign-in'}>
+                    <Link href={'/sign-up'}>
                         <Button>
                             Get Started
                         </Button>
