@@ -27,7 +27,14 @@ const Navbar = () =>{
                     </Link>
                 </SignedOut>
                 <SignedIn>
-                    <UserButton />
+                    <div className="flex items-center gap-3">
+                        <Link href="/profile">
+                        <Button variant="outline" size="sm">
+                            Profile
+                        </Button>
+                        </Link>
+                        <UserButton showName={false} />
+                    </div>
                 </SignedIn>
             </div>
         </div>
