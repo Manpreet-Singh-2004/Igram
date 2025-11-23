@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useUser } from "@clerk/nextjs";
-import PersonalInformation from "../../components/PersonalInformation";
+import PersonalInformation from "../../components/profile/PersonalInformation";
+import ProductAdd from "../../components/profile/ProductAdd";
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
@@ -61,20 +62,22 @@ export default function ProfilePage() {
   } = userData
 
   return (
-    <div className="flex flex-col justify-center items-center h-screen gap-5">
-      <h1 className="text-3xl font-bold">
-        Welcome {name}, You are a{" "}
-        {role}
-      </h1>
+    <div className="flex h-screen p-10 gap-10">
 
-      <PersonalInformation userData={userData} setUserData={setUserData} />
+      <div className="w-1/3">
+        <PersonalInformation userData={userData} setUserData={setUserData} />
+      </div>
+
+      <div className="flex flex-col justify-start items-start w-2/3 gap-6">
+
+        <h1 className="text-3xl font-bold">
+          Welcome {name}, You are a {role}
+        </h1>
 
       {/* Seller Start */}
-      {userData.role === "seller" && <Button>Add Products</Button>}
-
-
+        {userData.role === "seller" && <ProductAdd />}
       {/* Seller End */}
-      {/* User Start */}
+      </div>
     </div>
   );
 }
