@@ -1,5 +1,5 @@
 import Product from "@/models/Product.model";
-import DBConnect from '@/lib/DBConnect'
+import {DBConnect} from '@/lib/DBConnect'
 
 export async function GET(req, {params}){
     try{
