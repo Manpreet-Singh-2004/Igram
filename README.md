@@ -12,11 +12,16 @@ Your personal shopping center!
       + [Special case for clerkId GET](#special-case-for-clerkid-get)
       + [Special case for sellerId and productId](#special-case-for-sellerid-and-productid)
    * [Product Model](#product-model)
+- [Image-Kit](#image-kit)
+   * [Input Field change from URL to Image](#input-field-change-from-url-to-image)
+   * [Handling Submit](#handling-submit)
+   * [API](#api)
 - [Routes / API folder](#routes-api-folder)
    * [onboarding/update](#onboardingupdate)
       + [Problems / future updates (22-11-2025)](#problems-future-updates-22-11-2025)
    * [users/[userId]](#usersuserid)
    * [product/seller/[sellerId]/](#productsellersellerid)
+   * [api/upload-imagekit/route.js](#apiupload-imagekitroutejs)
 - [Profile](#profile)
    * [Seller](#seller)
 - [Components](#components)
@@ -144,6 +149,49 @@ Just what we talks about above, sellerId is stored like this
   },
 ```
 
+# Image-Kit
+## Input Field change from URL to Image
+
+Input Value was changed like this
+
+```js
+  <Input
+    // onChange={(e) => setForm({ ...form, imagesURL: e.target.value })} This is changed from value to files
+    type="file"
+    accept="image/*"
+    multiple
+    // value={form.imagesURL}
+    onChange={(e) => setForm({ ...form, imagesURL: Array.from(e.target.files) })}
+  />
+```
+
+## Handling Submit
+
+we basically added an endpoint 
+```js
+  const formData = new FormData();
+  form.imagesURL.forEach((file) => formData.append("files", file));
+
+  const uploadRes = await fetch("/api/upload-imagekit", {
+        method: "POST",
+        body: formData,
+      });
+  const {urls} = await uploadRes.json();
+
+  console.log("Url Created | HandleSubmit")
+```
+And in the body of submission changed to urls
+```js
+// This is replaced with
+    imagesURL: form.imagesURL.split(",").map((i) => i.trim()),
+// This
+    imagesURL: urls,
+```
+
+Check [api/upload-imagekit/route.js](#apiupload-imagekitroutejs) to see how it is sent to Image kit 
+
+## API
+
 # Routes / API folder
 
 ## onboarding/update
@@ -183,6 +231,32 @@ Just like how we dealt with user, we again used
 ```
 
 And since we wanted to create this to be shown at seller's own profile, we used `Product.find({sellerId})` 
+
+## api/upload-imagekit/route.js
+
+Since we are sending multiple files
+
+```js
+  const formData = await req.formData();
+  const files = formData.getAll("files");
+  const urls = [];
+```
+
+Then once the images are uploaded, imagekit sends the response back as a url
+
+```js
+    const upload = await imagekit.upload({
+      file: buffer,
+      fileName: file.name,
+    });
+
+      urls.push(upload.url);
+    }
+    console.log("Image URL sending | ImageKit API")
+    return NextResponse.json({urls});
+```
+And then we upload the URL back to our DB. [Handling Submit](#handling-submit)
+
 
 # Profile
 

@@ -24,8 +24,25 @@ export default function productAdd(){
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async() =>{
+        if (!user) return alert("User not loaded");
+        console.log("Submitting form…", form);
+        
         try{
             setLoading(true);
+
+
+            const formData = new FormData();
+            form.imagesURL.forEach((file) => formData.append("files", file));
+
+            const uploadRes = await fetch("/api/upload-imagekit", {
+                method: "POST",
+                body: formData,
+            });
+            const {urls} = await uploadRes.json();
+
+            console.log("Url Created | HandleSubmit")
+
+
             const res = await fetch("/api/products", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -33,7 +50,7 @@ export default function productAdd(){
                     clerkId: user.id,
                     name: form.name,
                     description: form.description,
-                    imagesURL: form.imagesURL.split(",").map((i) => i.trim()),
+                    imagesURL: urls,
                     price: Number(form.price),
                     stock: Number(form.stock),
                     category: form.category,
@@ -114,8 +131,11 @@ export default function productAdd(){
                 <div>
                     <label className="block text-sm font-medium">Image URLs (comma separated)</label>
                     <Input
-                        value={form.imagesURL}
-                        onChange={(e) => setForm({ ...form, imagesURL: e.target.value })}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        // value={form.imagesURL}
+                        onChange={(e) => setForm({ ...form, imagesURL: Array.from(e.target.files) })}
                     />
                 </div>
                 <Button onClick={handleSubmit} disabled={loading} className="w-full">
