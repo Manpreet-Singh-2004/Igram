@@ -1,20 +1,31 @@
 import Product from "@/models/Product.model";
 import {DBConnect} from '@/lib/DBConnect'
+import { NextResponse } from "next/server";
 
 export async function GET(req, {params}){
     try{
         await DBConnect()
 
-        const {sellerId} = params;
-        const products = await Product.find({sellerId});
+        const {sellerId} = await params;
+        console.log("SellerId:", sellerId);
 
-        return Response.json(
+        if(!sellerId){
+            console.log(`Cannot find seller Id | Seller API`)
+            return NextResponse.json(
+                {success: false, message: "Missing Seller Id | Seller ID API"},
+                {status: 400}
+            )
+        }
+
+        const products = await Product.find({sellerId}).sort({createdAt: -1});
+        console.log('Products Load Successfull | Seller API')
+        return NextResponse.json(
             {success: true, products},
             {status: 200}
         )
     } catch(error){
         console.error("Seller Products API Error: ", error)
-        return Response.json(
+        return NextResponse.json(
             {success: false, message: "Server Error Seller API"},
             {status: 500}
         )
