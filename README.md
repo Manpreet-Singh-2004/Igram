@@ -3,6 +3,21 @@ Your personal shopping center!
 
 # Table of contents
 
+- [IGram](#igram)
+- [Table of contents](#table-of-contents)
+- [Sign up](#sign-up)
+   * [Problem as of 22-11-2025](#problem-as-of-22-11-2025)
+- [Models](#models)
+   * [User model](#user-model)
+      + [Special case for clerkId GET](#special-case-for-clerkid-get)
+- [Routes / API folder](#routes-api-folder)
+   * [onboarding/update](#onboardingupdate)
+      + [Problems / future updates (22-11-2025)](#problems-future-updates-22-11-2025)
+   * [users/[userId]](#usersuserid)
+- [Profile](#profile)
+- [Components](#components)
+   * [PersonalInformation](#personalinformation)
+
 # Sign up
 As of now i am forcing a redirect after the clerk OAuth.
 
@@ -78,6 +93,53 @@ meaning in our users/[userId]/route.js we have to pass in `.select("+clerkId")` 
     const user = await User.findOne({ clerkId: userId }).select("+clerkId");
 ```
 
+### Special case for sellerId and productId
+
+**Users** have a `clerkId` (from Clerk authentication) and a MongoDB `_id` (created automatically by Mongoose).
+
+```js
+_id: ObjectId("...")   // MongoDB unique identifier
+clerkId: "user_xxx"    // Clerk's auth ID
+```
+  **Products** have a `sellerId` field:
+```js
+sellerId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  required: true
+}
+```
+This `sellerId` **stores the MongoDB `_id` of the user who is the seller**, not the `clerkId`.
+
+**Why we do it this way:**
+
+-   When a seller adds a product, the backend fetches the user by `clerkId` (from the authenticated user) and then stores **their MongoDB `_id`** in the `sellerId` field of the product.
+    
+-   Later, when fetching products for that seller, we query the `Product` collection using `sellerId`:
+
+```js
+Product.find({ sellerId: user._id })
+```
+
+So essentially:
+
+-   `clerkId` → comes from Clerk (used to find the user in your database).
+    
+-   `sellerId` → MongoDB `_id` of that user, stored in the Product collection to know which seller owns it.
+
+
+## Product Model
+
+Just what we talks about above, sellerId is stored like this
+
+```js
+  sellerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+```
+
 # Routes / API folder
 
 ## onboarding/update
@@ -107,6 +169,17 @@ One of the issues i came across was that in the new NextJs update the params are
     const userId = await IniParams.userId;
 ```
 
+## product/seller/[sellerId]/
+
+Just like how we dealt with user, we again used 
+
+```js
+    const {sellerId} = await params;
+    console.log("SellerId:", sellerId);
+```
+
+And since we wanted to create this to be shown at seller's own profile, we used `Product.find({sellerId})` 
+
 # Profile
 
 ```js
@@ -123,6 +196,22 @@ One of the issues i came across was that in the new NextJs update the params are
     };
 ```
 This function fetches from the API endpoint and passes parameters into PersonalInformation.jsx component
+
+## Seller
+To show Seller's product we used the useEffect like this 
+
+```js
+const res = await fetch(`/api/products/seller/${userData._id}`);
+```
+
+`useUser()` from clerk automatically passes gives the user, MongoDB user document contains `_id` 
+
+Next.js sees [sellerId] in the route and gives the value to your API route:
+
+```js
+const { sellerId } = params;
+```
+and finally your query products with `Product.find({ sellerId })` → returns all products for that seller.
 
 # Components
 ## PersonalInformation
