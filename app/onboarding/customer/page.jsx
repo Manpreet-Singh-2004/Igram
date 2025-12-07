@@ -1,86 +1,29 @@
-"use client";
+"use server"
+import { redirect } from "next/navigation"
+import { currentUser } from "@clerk/nextjs/server"
+import {DBConnect} from '@/lib/DBConnect'
+import User from '@/models/User.model'
+import CustomerForm from './CustomerForm'
 
-import { useUser } from "@clerk/nextjs";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-
-export default function Step1() {
-  const { user, isLoaded } = useUser();
-  const router = useRouter();
-
-  const [phone, setPhone] = useState("");
-
-  const [address, setAddress] = useState({
-    label: "Home",
-    country: "",
-    city: "",
-    postalCode: "",
-    streetAddress: "",
-  });
-
-  const handleSubmit = async () => {
-    if (!isLoaded || !user) return alert("User not loaded yet!");
-
-    const fullName =
-      `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User";
-
-    await fetch("/api/onboarding/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clerkId: user.id,
-        name: fullName,
-        email: user.primaryEmailAddress.emailAddress,
-        phone,
-        addresses: [address],
-      }),
-    });
-
-    router.push("/onboarding/complete");
-  };
-
-  if (!isLoaded || !user) {
-    return <p className="text-center mt-20">Loading...</p>;
+export default async function CustomerPage(){
+  const user = await currentUser();
+  if(!user){
+    return redirect('/sign-in');
   }
+  await DBConnect();
+  const dbUser = await User.findOne({clerkId: user.id}).lean();
 
-  const fullName =
-    `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
-
-  return (
-    <div className="max-w-md mx-auto mt-20">
-      <h1 className="text-2xl font-bold mb-2">Hello {fullName} 👋</h1>
-      <h2 className="text-xl font-semibold mb-6">Complete your account setup</h2>
-
-      {/* Phone Input */}
-      <Input
-        placeholder="Phone Number"
-        className="mb-4"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-      />
-
-      {/* Address Inputs */}
-      {Object.keys(address).map((key) => (
-        <Input
-          key={key}
-          className="mb-4"
-          placeholder={key}
-          value={address[key]}
-          onChange={(e) =>
-            setAddress({ ...address, [key]: e.target.value })
-          }
-        />
-      ))}
-
-      {/* Switch to seller */}
-      <p className="text-sm text-gray-600 mb-4 cursor-pointer hover:underline"
-         onClick={() => router.push("/onboarding/seller")}>
-        Want to sign up as a seller instead?
-      </p>
-
-      <Button onClick={handleSubmit}>Submit</Button>
-    </div>
-  );
+  if (dbUser?.role === 'seller') {
+    console.log('User is a seller, redirecting to seller onboarding');
+    return redirect("/onboarding/seller");
+  }
+  
+  if(dbUser?.phone && dbUser?.addresses?.length > 0){
+    console.log("Customer already onboarded, redirecting to home");
+    return redirect('/')
+  }
+    console.log("Rendering Customer Onboarding Form");
+    console.log(dbUser);
+  const serializedUser = dbUser ? JSON.parse(JSON.stringify(dbUser)): null;
+  return <CustomerForm dbUser={serializedUser} />
 }

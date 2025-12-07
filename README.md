@@ -58,6 +58,19 @@ Even when the User tries to log in, they are still redirected to onboarding page
 
 I am thinking to checking if the user already exist in our DB via email, since this cannot be done before the sign up page, i think i should do it on the onboarding page, which performs a check, if the user is found, then they are redirected to home page, otherwise they'll go through the onboarding.
 
+## Fixed
+i added new server files in both obvoarding seller and customer pages. Its called gatekeeping. Here is a clean, technical snippet you can drop directly into your README.md under a "Key Decisions" or "Architecture" section.
+
+Database & Serialization Pattern
+To ensure type safety and prevent Next.js serialization errors when passing data from Server Components to Client Components, we use the following pattern:
+
+.lean(): Applied to Mongoose queries (e.g., User.findOne().lean()). This bypasses the hydration of heavy Mongoose Documents, returning a lightweight Plain Old JavaScript Object (POJO) for better performance.
+
+JSON Serialization: We use JSON.parse(JSON.stringify(data)) before passing database records to the frontend. Next.js Client Components cannot accept complex server-side objects like MongoDB's ObjectId or JavaScript Date objects. This step converts them into strings, preventing hydration errors and ensuring the data is strictly serializable.
+
+
+Check the page.tsx in both of the onboardings.
+
 # Models
 ## User model
 

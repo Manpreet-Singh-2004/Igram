@@ -25,6 +25,7 @@ const Navbar = () =>{
                             Get Started
                         </Button>
                     </Link>
+                    
                 </SignedOut>
                 <SignedIn>
                     <div className="flex items-center gap-3">
