@@ -1,3 +1,5 @@
+// Seller specific Products API
+
 import Product from "@/models/Product.model";
 import {DBConnect} from '@/lib/DBConnect'
 import { NextResponse } from "next/server";

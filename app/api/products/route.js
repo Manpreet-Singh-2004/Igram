@@ -1,3 +1,5 @@
+// General Products API POST and GET
+
 import { NextResponse } from "next/server";
 import {DBConnect} from '@/lib/DBConnect'
 import User from '@/models/User.model'

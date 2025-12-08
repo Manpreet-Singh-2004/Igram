@@ -28,22 +28,22 @@ export async function PATCH(req, {params}){
     await DBConnect();
     const IniParams = await params
 
-    const clerkId = IniParams.userId;
+    const mongoId = IniParams.userId;
     const body = await req.json();
 
-    console.log("Patch request for Clerk ID: ", clerkId);
-    console.log("Patch Body: ", body);
+    console.log("Patch request for ID: ", mongoId);
 
     const updated = await User.findOneAndUpdate(
-      {clerkId},
+      {_id: mongoId},
       {$set: body},
       {new: true, runValidators: true}
     );
     if(!updated){
-      return NextResponse.json({error: "User not found"}, {status: 404})
+      console.log("mongoId: ", mongoId, " not found for update");
+      return NextResponse.json({error: "User not found | PATCH USER ROUTE"}, {status: 404})
     }
 
-    console.log("Update is pushed through the Route")
+    console.log("Update is pushed through the Route | PATCH USER ROUTE")
     return NextResponse.json(updated, {status: 200});
   } catch(error){
     console.error("Patch Error: ", error);

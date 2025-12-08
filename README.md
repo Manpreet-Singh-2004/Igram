@@ -234,6 +234,30 @@ One of the issues i came across was that in the new NextJs update the params are
     const userId = await IniParams.userId;
 ```
 
+### Error found in Patch 404 (07-12-2026)
+I found that updating the profile was not working
+
+### Fixed Patch 404 (08-12-2026)
+Error was found, and it involved me mixing up _id and clerkId
+
+In personalInformation component Patch request was being sent to
+```jsx
+const res = await fetch(`/api/users/${userData._id}`, {
+```
+which is mongoose Id.
+
+But my route was expecting Clerk Id.
+
+```jsx
+const updated = await User.findOneAndUpdate(
+      {clerkId},
+      {$set: body},
+      {new: true, runValidators: true}
+```
+
+Fix was that first i renamed `clerkId` in route.js to `mongoId`because that is what i am refering to so its better to use the actual termonoligy for maintanance.
+then since there is no actual `mongoId` field in my database, it is `_id`. I passed `{_id: mongoId}` in `findOneAndUpdate` function.
+
 ## product/seller/[sellerId]/
 
 Just like how we dealt with user, we again used 

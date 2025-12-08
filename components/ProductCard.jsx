@@ -5,13 +5,6 @@ import { ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProductCard({product}) {
-  // Hard-coded product object
-  // const product = {
-  //   name: "Cool Sneakers",
-  //   description: "Comfortable and stylish sneakers for everyday wear.",
-  //   price: 79.99,
-  //   image: "https://d1fufvy4xao6k9.cloudfront.net/feed/img/man_sneaker/876768/side.png",
-  // };
 
   return (
     <Link href={`/product/${product._id}`}> 
