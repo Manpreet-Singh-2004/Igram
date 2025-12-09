@@ -14,10 +14,17 @@ export default async function SellerPage() {
     await DBConnect();
     const dbUser = await User.findOne({ clerkId: user.id }).lean();
 
-    if (dbUser?.role === 'seller' && dbUser?.sellerProfile?.businessName){
+    const isSellerComplete = 
+        dbUser?.role === 'seller' && 
+        dbUser?.phone &&
+        dbUser?.sellerProfile?.businessName &&
+        dbUser?.sellerProfile?.businessAddress?.city;
+
+    if (isSellerComplete){
         console.log("Seller already onboarded, redirecting to home");
         return redirect('/')
     }
+
     console.log("Rendering Seller Onboarding Form");
     const serializedUser = dbUser ? JSON.parse(JSON.stringify(dbUser)) : null;
     return <SellerOnboarding dbUser={serializedUser} />;

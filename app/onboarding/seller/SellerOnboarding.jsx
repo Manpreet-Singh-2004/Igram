@@ -2,13 +2,14 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { onboardingSeller } from "@/lib/actions/onboarding/action"
+import Link from "next/link";
 
 function SellerOnboarding() {
   const { user, isLoaded } = useUser();
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const [phone, setPhone] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -23,28 +24,18 @@ function SellerOnboarding() {
   const handleSubmit = async () => {
     if (!isLoaded || !user) return alert("User not loaded yet!");
 
-    const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    setLoading(true);
 
-    // Ensure label is "Business" explicitly
-    const businessAddressPayload = { ...businessAddress, label: "Business" };
-
-    await fetch("/api/onboarding/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clerkId: user.id,
-        name: fullName,
-        email: user.primaryEmailAddress.emailAddress,
-        phone,
-        role: "seller",
-        sellerProfile: {
-          businessName,
-          businessAddress: businessAddressPayload,
-        },
-      }),
-    });
-
-    router.push("/onboarding/complete");
+    const payload = {
+      phone,
+      businessName,
+      businessAddress
+    }
+    const result = await onboardingSeller(payload);
+    if(result?.error){
+      alert(result.error);
+      setLoading(false);
+    }
   };
 
   if (!isLoaded || !user) {
@@ -88,10 +79,12 @@ function SellerOnboarding() {
       ))}
 
             {/* Switch to customer */}
-      <p className="text-sm text-gray-600 mb-4 cursor-pointer hover:underline"
-         onClick={() => router.push("/onboarding/customer")}>
+      <Link 
+        href="/onboarding/customer" 
+        className="block text-sm text-gray-600 mb-4 hover:underline"
+      >
         Want to sign up as a customer instead?
-      </p>
+      </Link>
 
       <Button onClick={handleSubmit}>Submit</Button>
     </div>
