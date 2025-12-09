@@ -321,6 +321,10 @@ Then once the images are uploaded, imagekit sends the response back as a url
 ```
 And then we upload the URL back to our DB. [Handling Submit](#handling-submit)
 
+# Important Announcement regarding APIs
+I am ditching Rest APIs and instead will be using server actions, because those are more appropriate for Next js Since this is not Express or some related language, it is serverless and hence i decided to use server actions as they are also short-lived.
+
+now i will be converting all the APIs into server actions which can be found in /lib/actions
 
 # Profile
 

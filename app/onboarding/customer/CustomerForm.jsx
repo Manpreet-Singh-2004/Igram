@@ -2,13 +2,15 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { onboardingCustomer } from "@/lib/actions/onboarding/action";
+import Link from "next/link";
 
 function CustomerForm() {
   const { user, isLoaded } = useUser();
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
 
   const [phone, setPhone] = useState("");
 
@@ -23,22 +25,18 @@ function CustomerForm() {
   const handleSubmit = async () => {
     if (!isLoaded || !user) return alert("User not loaded yet!");
 
-    const fullName =
-      `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unnamed User";
+    setLoading(true);
 
-    await fetch("/api/onboarding/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clerkId: user.id,
-        name: fullName,
-        email: user.primaryEmailAddress.emailAddress,
-        phone,
-        addresses: [address],
-      }),
-    });
+    const payload = {
+      phone,
+      addresses: [address],
+    }
+    const result = await onboardingCustomer(payload);
 
-    router.push("/onboarding/complete");
+    if(result?.error){
+      alert(result.error);
+      setLoading(false);
+    }
   };
 
   if (!isLoaded || !user) {
@@ -75,12 +73,14 @@ function CustomerForm() {
       ))}
 
       {/* Switch to seller */}
-      <p className="text-sm text-gray-600 mb-4 cursor-pointer hover:underline"
-         onClick={() => router.push("/onboarding/seller")}>
+      <Link 
+        href="/onboarding/seller" 
+        className="block text-sm text-gray-600 mb-4 hover:underline"
+      >
         Want to sign up as a seller instead?
-      </p>
+      </Link>
 
-      <Button onClick={handleSubmit}>Submit</Button>
+      <Button onClick={handleSubmit} disabled={loading}>Submit</Button>
     </div>
   );
 }
