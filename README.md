@@ -203,6 +203,30 @@ And in the body of submission changed to urls
 
 Check [api/upload-imagekit/route.js](#apiupload-imagekitroutejs) to see how it is sent to Image kit 
 
+## Issue found and Resolved | Imagekit Deletion + security (08-12-2025)
+When trying to delete the product, i saw that i cannot delete the image, that is because we are just storing the URLs but not the fileIds which we need in order to delete the photos, this is why in schema i had to change and use fileIds.
+
+```jsx
+fileId: {type: String, required: true}
+```
+
+After this i made a helper function in `lib/actions/product.actions.js` where i deleted the images from image kit using `bulkDeleteFiles`and passing in the fileIds.
+
+`route.js` for upload-imagekit was also changed
+```js
+        uploadedImages.push({
+            url: upload.url,
+            fileId: upload.fileId
+        })
+```
+
+Changes also included in `ProductCard.jsx` where i just stored the data in a const
+```jsx
+const imageUrl = product.images?.[0]?.url
+```
+and in Product page where i conditionally rendered the button by checking ClerkId, and comparing if the `clerkId` and mongo user id `_id` is same or not, if same then isSeller becomes true
+
+
 ## API
 
 # Routes / API folder

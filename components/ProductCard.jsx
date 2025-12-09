@@ -6,12 +6,13 @@ import Link from 'next/link';
 
 export default function ProductCard({product}) {
 
+  const imageUrl = product.images?.[0]?.url || '/placeholder-image.png';
   return (
     <Link href={`/product/${product._id}`}> 
     <div className="max-w-xs w-64 h-80 rounded overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-800 flex flex-col">
       <img
         className="w-full h-48 object-cover"
-        src={product.imagesURL?.[0]}
+        src={imageUrl}
         alt={product.name}
       />
       <div className="px-4 py-2">

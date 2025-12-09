@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 export default function productAdd(){
 
@@ -14,33 +15,41 @@ export default function productAdd(){
     const [form, setForm] = useState({
         name: "",
         description: "",
-        imagesURL: "",
         price: "",
         stock: "",
         category: "",
         tags: "",
     })
 
+    const [selectedFiles, setSelectedFiles] = useState([]);
+
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async() =>{
         if (!user) return alert("User not loaded");
         console.log("Submitting form…", form);
+
+        if(selectedFiles.length === 0){
+            return alert("Please select at least one image.");
+        }
         
         try{
             setLoading(true);
 
 
             const formData = new FormData();
-            form.imagesURL.forEach((file) => formData.append("files", file));
+            selectedFiles.forEach((file) => formData.append("files", file))
 
             const uploadRes = await fetch("/api/upload-imagekit", {
                 method: "POST",
                 body: formData,
             });
-            const {urls} = await uploadRes.json();
+            if(!uploadRes.ok){
+                throw new Error("Image upload failed");
+            }
 
-            console.log("Url Created | HandleSubmit")
+            const {images} = await uploadRes.json();
+            console.log("Images uploaded: ", images);
 
 
             const res = await fetch("/api/products", {
@@ -50,13 +59,18 @@ export default function productAdd(){
                     clerkId: user.id,
                     name: form.name,
                     description: form.description,
-                    imagesURL: urls,
+                    images: images,
                     price: Number(form.price),
                     stock: Number(form.stock),
                     category: form.category,
                     tags: form.tags.split(",").map((t) => t.trim()),
                 }),
             });
+
+            if(!res.ok){
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Failed to create product");
+            }
 
             const data = await res.json();
             console.log("Product Created and added: ", data)
@@ -65,12 +79,12 @@ export default function productAdd(){
             setForm({
                 name: "",
                 description: "",
-                imagesURL: "",
                 price: "",
                 stock: "",
                 category: "",
                 tags: "",
-            })
+            });
+            setSelectedFiles([]);
         } catch(error){
             console.log("Error while adding the product | ProductAdd component: ", error)
         } finally{
@@ -87,6 +101,7 @@ export default function productAdd(){
                 <div>
                     <label className="block text-sm font-medium">Product Name</label>
                     <Input 
+                        required
                         value={form.name}
                         onChange={(e) => setForm({...form, name: e.target.value})}
                     />
@@ -94,6 +109,7 @@ export default function productAdd(){
                 <div>
                     <label className="block text-sm font-medium">Description</label>
                     <Textarea
+                        required
                         value={form.description}
                         onChange={(e) => setForm({ ...form, description: e.target.value })}
                     />
@@ -101,6 +117,7 @@ export default function productAdd(){
                 <div>
                     <label className="block text-sm font-medium">Price (in CAD)</label>
                     <Input
+                        required
                         type="number"
                         value={form.price}
                         onChange={(e) => setForm({ ...form, price: e.target.value })}
@@ -109,6 +126,7 @@ export default function productAdd(){
                 <div>
                     <label className="block text-sm font-medium">Stock</label>
                     <Input
+                        required
                         type="number"
                         value={form.stock}
                         onChange={(e) => setForm({ ...form, stock: e.target.value })}
@@ -117,6 +135,7 @@ export default function productAdd(){
                 <div>
                     <label className="block text-sm font-medium">Category</label>
                     <Input
+                        required
                         value={form.category}
                         onChange={(e) => setForm({ ...form, category: e.target.value })}
                     />
@@ -135,7 +154,7 @@ export default function productAdd(){
                         accept="image/*"
                         multiple
                         // value={form.imagesURL}
-                        onChange={(e) => setForm({ ...form, imagesURL: Array.from(e.target.files) })}
+                        onChange={(e) => setSelectedFiles(Array.from(e.target.files))}
                     />
                 </div>
                 <Button onClick={handleSubmit} disabled={loading} className="w-full">

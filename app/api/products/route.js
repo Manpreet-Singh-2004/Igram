@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import {DBConnect} from '@/lib/DBConnect'
 import User from '@/models/User.model'
 import Product from '@/models/Product.model'
+import { auth } from "@clerk/nextjs/server";
 
 export async function GET(){
     try{
@@ -26,25 +27,23 @@ export async function POST(req){
     try{
         await DBConnect();
 
+        const {userId: clerkId} = await auth();
+
+        if(!clerkId){
+            return NextResponse.json({error: 'Unauthorized | api/products POST'}, {status: 401});
+        }
+
         const body = await req.json();
         const {
-            clerkId,
             name,
             description,
-            imagesURL,
+            images,
             price,
             stock,
             category,
             tags,
         } = body;
 
-        if(!clerkId){
-            console.log('clerkId Not Found! | Product API')
-            return NextResponse.json(
-                {error: 'Missing clerkId'},
-                {status: 400}
-            )
-        }
         const seller = await User.findOne({clerkId});
 
         if(!seller){
@@ -67,7 +66,7 @@ export async function POST(req){
             sellerId: seller._id,
             name,
             description,
-            imagesURL,
+            images: images,
             price,
             stock,
             category,

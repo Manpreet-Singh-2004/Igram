@@ -10,7 +10,7 @@ const imagekit = new ImageKit({
 export async function POST(req){
     const formData = await req.formData();
     const files = formData.getAll("files");
-    const urls = [];
+    const uploadedImages = [];
 
     for(const file of files){
         const buffer = Buffer.from(await file.arrayBuffer());
@@ -20,8 +20,11 @@ export async function POST(req){
             fileName: file.name,
         });
 
-        urls.push(upload.url);
+        uploadedImages.push({
+            url: upload.url,
+            fileId: upload.fileId
+        })
     }
-    console.log("Image URL sending | ImageKit API")
-    return NextResponse.json({urls});
+    console.log("Image Uploaded | ImageKit API")
+    return NextResponse.json({images: uploadedImages});
 }

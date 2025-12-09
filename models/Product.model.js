@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { type } from "os";
 
 const ProductSchema = new mongoose.Schema(
     {
@@ -16,10 +17,14 @@ const ProductSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        imagesURL: {
-            type: [String],
-            required: true,
-        },
+        // imagesURL: {
+        //     type: [String],
+        //     required: true,
+        // },
+        images:[{
+            url: {type: String, required: true},
+            fileId: {type: String, required: true}
+        }],
         price: {
             type: Number,
             required: true,

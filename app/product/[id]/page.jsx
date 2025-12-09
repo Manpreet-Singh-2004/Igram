@@ -1,5 +1,6 @@
 import {DBConnect} from '@/lib/DBConnect'
 import Product from '@/models/Product.model'
+import User from '@/models/User.model';
 import Image from 'next/image';
 import {   
   Carousel,
@@ -8,6 +9,8 @@ import {
   CarouselNext,
   CarouselPrevious
  } from "@/components/ui/carousel";
+import { auth } from '@clerk/nextjs/server';
+import DeleteProductBtn from '@/components/DeleteProductBtn';
 
 export default async function ProductPage({params}){
 
@@ -16,7 +19,20 @@ export default async function ProductPage({params}){
     const product = await Product.findById(id).lean();
 
     if(!product){
+        console.log("Product not found with id:", id);
         return <h1 className="text-center mt-20 text-2xl">Product not found</h1>
+    }
+
+    const {userId: clerkId} = await auth();
+
+    let isSeller = false;
+
+    if(clerkId){
+      const currentUser = await User.findOne({clerkId}).select("_id").lean()
+
+      if(currentUser && currentUser._id.toString() === product.sellerId.toString()){
+        isSeller = true;
+      }
     }
 
     return(
@@ -24,14 +40,14 @@ export default async function ProductPage({params}){
 
       <Carousel className="w-full rounded-lg relative">
         <CarouselContent className="h-[500px]">
-          {product.imagesURL.map((img, idx) => (
+          {product.images?.map((img, idx) => (
             <CarouselItem 
               key={idx} 
               className="w-full h-[500px]"
             >
               <div className="relative w-full h-full">
                 <Image
-                  src={img}
+                  src={img.url}
                   alt={`${product.name}-${idx}`}
                   fill
                   className="object-contain bg-black/5 rounded-lg"
@@ -55,6 +71,12 @@ export default async function ProductPage({params}){
         <button className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
           Buy Now
         </button>
+
+          {isSeller &&(
+              <DeleteProductBtn productId={product._id.toString()} />
+            )
+          }
+
       </div>
     </div>
     )

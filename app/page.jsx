@@ -15,6 +15,7 @@ export default function Home(){
         const data = await res.json();
 
         if (data.success) {
+          console.log("Fetched products | Home Page");
           setProducts(data.products);
         }
       } catch (error) {
