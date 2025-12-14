@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import ProductCard from '../components/ProductCard'
+import ProductCard from '../components/Product/ProductCard'
 import { Spinner } from '@/components/ui/spinner';
 
 export default function Home(){
@@ -11,7 +11,9 @@ export default function Home(){
     useEffect(() => {
     async function fetchProducts() {
       try {
-        const res = await fetch("/api/products");
+        const res = await fetch("/api/products",{
+          next: {revalidate: 300}
+        });
         const data = await res.json();
 
         if (data.success) {

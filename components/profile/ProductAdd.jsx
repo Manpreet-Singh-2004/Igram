@@ -7,6 +7,7 @@ import { useUser } from "@clerk/nextjs";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { ProductAddAction } from "@/lib/actions/product/ProductAddAction";
 
 export default function productAdd(){
 
@@ -52,20 +53,15 @@ export default function productAdd(){
             console.log("Images uploaded: ", images);
 
 
-            const res = await fetch("/api/products", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    clerkId: user.id,
-                    name: form.name,
-                    description: form.description,
-                    images: images,
-                    price: Number(form.price),
-                    stock: Number(form.stock),
-                    category: form.category,
-                    tags: form.tags.split(",").map((t) => t.trim()),
-                }),
-            });
+            const res = await ProductAddAction({
+                name: form.name,
+                description: form.description,
+                images: images,
+                price: Number(form.price),
+                stock: Number(form.stock),
+                category: form.category,
+                tags: form.tags.split(",").map((t) => t.trim()),
+            })
 
             if(!res.ok){
                 const errorData = await res.json();

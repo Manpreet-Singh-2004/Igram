@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { DBConnect } from "@/lib/DBConnect";
 import PersonalInformation from "@/components/profile/PersonalInformation";
 import ProductAdd from "@/components/profile/ProductAdd";
-import ProductCard from '@/components/ProductCard'
+import ProductCard from '@/components/Product/ProductCard'
 import Product from "@/models/Product.model";
 import User from "@/models/User.model";
 

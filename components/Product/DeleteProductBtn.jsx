@@ -1,7 +1,7 @@
 "use client"
 
 import { useTransition } from "react";
-import { deleteProduct } from "@/lib/actions/product.actions";
+import { deleteProduct } from "@/lib/actions/product/productDelete";
 import { Loader2, Trash2 } from "lucide-react";
 import {Button} from "@/components/ui/button";
 

@@ -10,18 +10,21 @@ import {
   CarouselPrevious
  } from "@/components/ui/carousel";
 import { auth } from '@clerk/nextjs/server';
-import DeleteProductBtn from '@/components/DeleteProductBtn';
+import DeleteProductBtn from '@/components/Product/DeleteProductBtn';
+import ProductEdit from '../../../components/Product/ProductEditForm';
 
 export default async function ProductPage({params}){
 
     await DBConnect();
     const {id} = await params
-    const product = await Product.findById(id).lean();
+    const productDoc = await Product.findById(id).lean();
 
-    if(!product){
+    if(!productDoc){
         console.log("Product not found with id:", id);
         return <h1 className="text-center mt-20 text-2xl">Product not found</h1>
     }
+
+    const product = JSON.parse(JSON.stringify(productDoc));
 
     const {userId: clerkId} = await auth();
 
@@ -76,6 +79,13 @@ export default async function ProductPage({params}){
               <DeleteProductBtn productId={product._id.toString()} />
             )
           }
+
+          {isSeller && (
+            <div className="mt-10 md:col-span-2">
+              <ProductEdit product={product} />
+            </div>
+          )}
+
 
       </div>
     </div>
