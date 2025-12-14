@@ -6,8 +6,6 @@ Your personal shopping center!
 - [IGram](#igram)
 - [Table of contents](#table-of-contents)
 - [Sign up](#sign-up)
-   * [Problem as of 22-11-2025](#problem-as-of-22-11-2025)
-   * [Fixed](#fixed)
 - [Models](#models)
    * [User model](#user-model)
       + [Special case for clerkId GET](#special-case-for-clerkid-get)
@@ -21,14 +19,21 @@ Your personal shopping center!
    * [onboarding/update](#onboardingupdate)
       + [Problems / future updates (22-11-2025)](#problems-future-updates-22-11-2025)
    * [users/[userId]](#usersuserid)
-      + [Error found in Patch 404 (07-12-2026)](#error-found-in-patch-404-07-12-2026)
-      + [Fixed Patch 404 (08-12-2026)](#fixed-patch-404-08-12-2026)
    * [product/seller/[sellerId]/](#productsellersellerid)
    * [api/upload-imagekit/route.js](#apiupload-imagekitroutejs)
+- [Important Announcement regarding APIs](#important-announcement-regarding-apis)
 - [Profile](#profile)
    * [Seller](#seller)
 - [Components](#components)
    * [PersonalInformation](#personalinformation)
+- [Problems and Issues](#problems-and-issues)
+   * [Problem as of 22-11-2025](#problem-as-of-22-11-2025)
+      + [Fixed](#fixed)
+   * [Error found in Patch 404 (07-12-2026)](#error-found-in-patch-404-07-12-2026)
+      + [Fixed Patch 404 (08-12-2026)](#fixed-patch-404-08-12-2026)
+   * [Problem/Issue 14/12/2026 (Serialization error | Product/[id]/page.jsx)](#problemissue-14122026-serialization-error-productidpagejsx)
+      + [Fix](#fix)
+   * [Problem/Issue 2 14/12/2026 (Image duplication for edit)](#problemissue-2-14122026-image-duplication-for-edit)
 
 # Sign up
 As of now i am forcing a redirect after the clerk OAuth.
@@ -55,24 +60,6 @@ I then use the Onboarding API to further pass the details of user to Mongo.
 ```
 
 we are getting tihs information like user.id, primaryEmailAddress
-
-## Problem as of 22-11-2025
-Even when the User tries to log in, they are still redirected to onboarding page.
-
-I am thinking to checking if the user already exist in our DB via email, since this cannot be done before the sign up page, i think i should do it on the onboarding page, which performs a check, if the user is found, then they are redirected to home page, otherwise they'll go through the onboarding.
-
-## Fixed
-i added new server files in both obvoarding seller and customer pages. Its called gatekeeping. Here is a clean, technical snippet you can drop directly into your README.md under a "Key Decisions" or "Architecture" section.
-
-Database & Serialization Pattern
-To ensure type safety and prevent Next.js serialization errors when passing data from Server Components to Client Components, we use the following pattern:
-
-.lean(): Applied to Mongoose queries (e.g., User.findOne().lean()). This bypasses the hydration of heavy Mongoose Documents, returning a lightweight Plain Old JavaScript Object (POJO) for better performance.
-
-JSON Serialization: We use JSON.parse(JSON.stringify(data)) before passing database records to the frontend. Next.js Client Components cannot accept complex server-side objects like MongoDB's ObjectId or JavaScript Date objects. This step converts them into strings, preventing hydration errors and ensuring the data is strictly serializable.
-
-
-Check the page.tsx in both of the onboardings.
 
 # Models
 ## User model
@@ -206,9 +193,6 @@ And in the body of submission changed to urls
 
 Check [api/upload-imagekit/route.js](#apiupload-imagekitroutejs) to see how it is sent to Image kit 
 
-## Issue found and Resolved | Imagekit Deletion + security (08-12-2025)
-When trying to delete the product, i saw that i cannot delete the image, that is because we are just storing the URLs but not the fileIds which we need in order to delete the photos, this is why in schema i had to change and use fileIds.
-
 ```jsx
 fileId: {type: String, required: true}
 ```
@@ -248,10 +232,6 @@ getting information from onboarding page and passing it into this API and it is 
     );
 ```
 
-### Problems / future updates (22-11-2025)
-
-For the address, i am planning to use google maps to auto pick location and fill the fields.
-
 ## users/[userId]
 
 One of the issues i came across was that in the new NextJs update the params are now a part of promises meaning they have to be used with await. so instead of using `const userId = params.userId` you have to first store it into another variable like i did with `IniParams` and then defragment it.
@@ -260,30 +240,6 @@ One of the issues i came across was that in the new NextJs update the params are
     const IniParams = await params
     const userId = await IniParams.userId;
 ```
-
-### Error found in Patch 404 (07-12-2026)
-I found that updating the profile was not working
-
-### Fixed Patch 404 (08-12-2026)
-Error was found, and it involved me mixing up _id and clerkId
-
-In personalInformation component Patch request was being sent to
-```jsx
-const res = await fetch(`/api/users/${userData._id}`, {
-```
-which is mongoose Id.
-
-But my route was expecting Clerk Id.
-
-```jsx
-const updated = await User.findOneAndUpdate(
-      {clerkId},
-      {$set: body},
-      {new: true, runValidators: true}
-```
-
-Fix was that first i renamed `clerkId` in route.js to `mongoId`because that is what i am refering to so its better to use the actual termonoligy for maintanance.
-then since there is no actual `mongoId` field in my database, it is `_id`. I passed `{_id: mongoId}` in `findOneAndUpdate` function.
 
 ## product/seller/[sellerId]/
 
@@ -382,3 +338,122 @@ The function saves the state and forwards to `PATCH` in user API endpoint
 ```
 
 Uses Alert Dialouge to ask before change, and this state `const [editable, setEditable] = useState(false);` to change the values.
+
+# Problems and Issues
+
+## Problem as of 22-11-2025
+Even when the User tries to log in, they are still redirected to onboarding page.
+
+I am thinking to checking if the user already exist in our DB via email, since this cannot be done before the sign up page, i think i should do it on the onboarding page, which performs a check, if the user is found, then they are redirected to home page, otherwise they'll go through the onboarding.
+
+### Fixed
+i added new server files in both obvoarding seller and customer pages. Its called gatekeeping. Here is a clean, technical snippet you can drop directly into your README.md under a "Key Decisions" or "Architecture" section.
+
+Database & Serialization Pattern
+To ensure type safety and prevent Next.js serialization errors when passing data from Server Components to Client Components, we use the following pattern:
+
+`.lean(`): Applied to Mongoose queries (e.g., User.findOne().lean()). This bypasses the hydration of heavy Mongoose Documents, returning a lightweight Plain Old JavaScript Object (POJO) for better performance.
+
+JSON Serialization: We use JSON.parse(JSON.stringify(data)) before passing database records to the frontend. Next.js Client Components cannot accept complex server-side objects like MongoDB's ObjectId or JavaScript Date objects. This step converts them into strings, preventing hydration errors and ensuring the data is strictly serializable.
+
+
+Check the page.tsx in both of the onboardings.
+
+## Error found in Patch 404 (07-12-2026)
+I found that updating the profile was not working
+
+### Fixed Patch 404 (08-12-2026)
+Error was found, and it involved me mixing up _id and clerkId
+
+In personalInformation component Patch request was being sent to
+```jsx
+const res = await fetch(`/api/users/${userData._id}`, {
+```
+which is mongoose Id.
+
+But my route was expecting Clerk Id.
+
+```jsx
+const updated = await User.findOneAndUpdate(
+      {clerkId},
+      {$set: body},
+      {new: true, runValidators: true}
+```
+
+Fix was that first i renamed `clerkId` in route.js to `mongoId`because that is what i am refering to so its better to use the actual termonoligy for maintanance.
+then since there is no actual `mongoId` field in my database, it is `_id`. I passed `{_id: mongoId}` in `findOneAndUpdate` function.
+
+## Problem/Issue 14/12/2026 (Serialization error | Product/[id]/page.jsx)
+
+Next.js Client Components can only receive plain JSON-serializable data. We MUST serialize product into the React Server → Client payload.
+
+React only accepts:
+
+- strings
+
+- numbers
+
+- booleans
+
+- arrays
+
+- plain objects
+
+- null
+
+If the object has any prototype, any custom class, or any toJSON(), React immediately throws:
+
+Only plain objects can be passed to Client Components.
+
+Why Lean did not work?
+
+✔ .lean() removes Mongoose document wrappers
+❌ .lean() does NOT sanitize nested values like:
+
+- ObjectId instances
+
+- Date objects
+
+- Arrays containing ObjectIds
+
+- Embedded subdocuments with their own prototypes
+
+- Objects with a toJSON() method
+
+### Fix
+
+in product/[id]/page.jsx
+
+We used JSON.stringify()
+
+```jsx
+const productDoc = await Product.findById(id).lean();
+const product = JSON.parse(JSON.stringify(productDoc));
+```
+
+JSON.stringify() does something .lean() CANNOT do:
+
+It serializes everything into pure JSON primitives:
+
+- ObjectId → becomes a string
+
+- Date → becomes ISO string
+
+- Buffers → become base64 string or are removed
+
+- Subdocuments → converted to plain nested objects
+
+- Removes ALL prototypes and class instances
+
+Then:
+
+JSON.parse() converts that JSON string back into a real plain object, with zero prototypes attached.
+
+This gives you the ONLY format React Client Components accept.
+
+## Problem/Issue 2 14/12/2026 (Image duplication for edit)
+The i am facing now is that when we patch/edit the product, Imagekit keeps the original images and the new one, the fix should be easy, and that is to load up the delete images if image are being replaced.
+
+### Problems / future updates (22-11-2025)
+
+For the address, i am planning to use google maps to auto pick location and fill the fields.

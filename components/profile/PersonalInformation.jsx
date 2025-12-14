@@ -14,28 +14,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { updateProfile } from "@/lib/actions/profile/action";
 
 export default function PersonalInformation({ userData, setUserData }) {
   const [editable, setEditable] = useState(false);
   const [form, setForm] = useState(userData);
+  const [loading, setLoading] = useState(false);
 
   const { name, email, phone, addresses, role, sellerProfile } = form;
 
   // Save function
   const handleSave = async () => {
-    try {
-      const res = await fetch(`/api/users/${userData._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const updated = await res.json();
-      setUserData(updated);
-      setForm(updated);
+    setLoading(true);
+    const result = await updateProfile(form);
+
+    if(result.success){
+      setForm(result.user);
       setEditable(false);
-    } catch (err) {
-      console.error("Error saving Personal Info:", err);
+    } else{
+      alert("Error updating profile: " + result.error);
     }
+    setLoading(false);
   };
 
   // Helper: render an address object
