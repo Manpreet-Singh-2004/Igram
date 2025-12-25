@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,154 +9,161 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { editProductAction } from "@/lib/actions/product/ProductEdit";
 
 export default function ProductEdit({ product }) {
-    const [form, setForm] = useState({
-        name: product.name || "",
-        description: product.description || "",
-        price: product.price || "",
-        stock: product.stock || "",
-        category: product.category || "",
-        tags: product.tags?.join(", ") || "",
-    });
-   const [selectedFiles, setSelectedFiles] = useState([]);
-    const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    name: product.name || "",
+    description: product.description || "",
+    price: product.price || "",
+    stock: product.stock || "",
+    category: product.category || "",
+    tags: product.tags?.join(", ") || "",
+  });
 
-    const handleSubmit = async () => {
-        try {
-            setLoading(true);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-            let finalImages = product.images; // default = keep old images
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
 
-            // If new images selected → upload them
-            if (selectedFiles.length > 0) {
-                const formData = new FormData();
-                selectedFiles.forEach((file) => formData.append("files", file));
+      let finalImages = product.images;
 
-                const uploadRes = await fetch("/api/upload-imagekit", {
-                    method: "POST",
-                    body: formData,
-                });
+      // Upload new images if selected
+      if (selectedFiles.length > 0) {
+        const formData = new FormData();
+        selectedFiles.forEach((file) => formData.append("files", file));
 
-                if (!uploadRes.ok) throw new Error("Image upload failed");
-                const { images } = await uploadRes.json();
-                finalImages = images; // replace with new set
-            }
+        const uploadRes = await fetch("/api/upload-imagekit", {
+          method: "POST",
+          body: formData,
+        });
 
-            const result = await editProductAction(product._id, {
-                name: form.name,
-                description: form.description,
-                images: finalImages,
-                price: Number(form.price),
-                stock: Number(form.stock),
-                category: form.category,
-                tags: form.tags.split(",").map((t) => t.trim()),
-            });
-
-            if (!result.success) {
-                alert(result.error);
-                return;
-            }
-
-            alert("Product updated successfully!");
-
-        } catch (error) {
-            console.error("Error updating product:", error);
-            alert("Failed to update product.");
-        } finally {
-            setLoading(false);
+        if (!uploadRes.ok) {
+          throw new Error("IMAGE_UPLOAD_FAILED");
         }
-    };
 
-    return (
-        <Card className="max-w-lg w-full p-3">
-            <CardHeader>
-                <CardTitle className="text-2xl font-bold">Edit Product</CardTitle>
-            </CardHeader>
+        const { images } = await uploadRes.json();
+        finalImages = images;
+      }
 
-            <CardContent className="space-y-4">
+      await editProductAction(product._id, {
+        name: form.name,
+        description: form.description,
+        images: finalImages,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        category: form.category,
+        tags: form.tags.split(",").map((t) => t.trim()),
+      });
 
-                <div>
-                    <label className="block text-sm font-medium">Product Name</label>
-                    <Input
-                        value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    />
-                </div>
+      toast.success("Product updated successfully");
+    } catch (err) {
+      console.error("Edit product error:", err);
 
-                <div>
-                    <label className="block text-sm font-medium">Description</label>
-                    <Textarea
-                        value={form.description}
-                        onChange={(e) =>
-                            setForm({ ...form, description: e.target.value })
-                        }
-                    />
-                </div>
+      if (err?.message === "AUTH_REQUIRED") {
+        toast.error("Please sign in to edit this product");
+        return;
+      }
 
-                <div>
-                    <label className="block text-sm font-medium">Price (CAD)</label>
-                    <Input
-                        type="number"
-                        value={form.price}
-                        onChange={(e) =>
-                            setForm({ ...form, price: e.target.value })
-                        }
-                    />
-                </div>
+      if (err?.message === "NOT_SELLER") {
+        toast.error("You are not allowed to edit this product");
+        return;
+      }
 
-                <div>
-                    <label className="block text-sm font-medium">Stock</label>
-                    <Input
-                        type="number"
-                        value={form.stock}
-                        onChange={(e) =>
-                            setForm({ ...form, stock: e.target.value })
-                        }
-                    />
-                </div>
+      if (err?.message === "IMAGE_UPLOAD_FAILED") {
+        toast.error("Failed to upload images");
+        return;
+      }
 
-                <div>
-                    <label className="block text-sm font-medium">Category</label>
-                    <Input
-                        value={form.category}
-                        onChange={(e) =>
-                            setForm({ ...form, category: e.target.value })
-                        }
-                    />
-                </div>
+      toast.error("Failed to update product. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                <div>
-                    <label className="block text-sm font-medium">Tags (comma separated)</label>
-                    <Input
-                        value={form.tags}
-                        onChange={(e) =>
-                            setForm({ ...form, tags: e.target.value })
-                        }
-                    />
-                </div>
+  return (
+    <Card className="max-w-lg w-full p-3">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold">Edit Product</CardTitle>
+      </CardHeader>
 
-                <div>
-                    <label className="block text-sm font-medium">Replace Images (optional)</label>
-                    <Input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(e) =>
-                            setSelectedFiles(Array.from(e.target.files))
-                        }
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                        Leave empty to keep existing images.
-                    </p>
-                </div>
+      <CardContent className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium">Product Name</label>
+          <Input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+        </div>
 
-                <Button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="w-full"
-                >
-                    {loading ? "Saving..." : "Update Product"}
-                </Button>
-            </CardContent>
-        </Card>
-    );
+        <div>
+          <label className="block text-sm font-medium">Description</label>
+          <Textarea
+            value={form.description}
+            onChange={(e) =>
+              setForm({ ...form, description: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Price (CAD)</label>
+          <Input
+            type="number"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Stock</label>
+          <Input
+            type="number"
+            value={form.stock}
+            onChange={(e) => setForm({ ...form, stock: e.target.value })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Category</label>
+          <Input
+            value={form.category}
+            onChange={(e) =>
+              setForm({ ...form, category: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">
+            Tags (comma separated)
+          </label>
+          <Input
+            value={form.tags}
+            onChange={(e) => setForm({ ...form, tags: e.target.value })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">
+            Replace Images (optional)
+          </label>
+          <Input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) =>
+              setSelectedFiles(Array.from(e.target.files || []))
+            }
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Leave empty to keep existing images.
+          </p>
+        </div>
+
+        <Button onClick={handleSubmit} disabled={loading} className="w-full">
+          {loading ? "Saving..." : "Update Product"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }

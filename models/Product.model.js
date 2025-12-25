@@ -7,6 +7,7 @@ const ProductSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true,
+            index: true
         },
         name: {
             type: String,
@@ -17,14 +18,21 @@ const ProductSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        // imagesURL: {
-        //     type: [String],
-        //     required: true,
-        // },
-        images:[{
-            url: {type: String, required: true},
-            fileId: {type: String, required: true}
-        }],
+        // images:[{
+        //     url: {type: String, required: true},
+        //     fileId: {type: String, required: true}
+        // }],
+        images: {
+            type: [{
+                url: { type: String, required: true },
+                fileId: { type: String, required: true }
+            }],
+            validate: {
+                validator: v => v.length > 0,
+                message: "Product must have at least one image"
+            }
+        },
+
         price: {
             type: Number,
             required: true,

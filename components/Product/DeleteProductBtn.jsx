@@ -1,38 +1,89 @@
-"use client"
+"use client";
 
 import { useTransition } from "react";
-import { deleteProduct } from "@/lib/actions/product/productDelete";
+import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { deleteProduct } from "@/lib/actions/product/productDelete";
 
-export default function DeleteProductBtn({productId}){
-    const [isPending, startTransition] = useTransition();
+export default function DeleteProductBtn({ productId }) {
+  const [isPending, startTransition] = useTransition();
 
-    const handleDelete = () =>{
-        const confirmDelete = window.confirm("Are you sure you want to delete this product?");
-        if(confirmDelete){
-            startTransition(async() =>{
-                await deleteProduct(productId);
-            })
+  const handleDelete = () => {
+    startTransition(async () => {
+      try {
+        await deleteProduct(productId);
+        toast.success("Product deleted successfully");
+        // redirect happens in server action
+      } catch (err) {
+        console.error("Delete product error:", err);
+
+        if (err?.message === "Unauthorized") {
+          toast.error("Please sign in to delete this product");
+          return;
         }
-    }
-    return(
-        <Button
+
+        if (err?.message === "You are not authorized to delete this product") {
+          toast.error("You are not allowed to delete this product");
+          return;
+        }
+
+        toast.error("Failed to delete product. Please try again.");
+      }
+    });
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive" disabled={isPending}>
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Deleting...
+            </>
+          ) : (
+            <>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Product
+            </>
+          )}
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete product?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. The product and all its images will be
+            permanently deleted.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
             onClick={handleDelete}
             disabled={isPending}
-        >
-            {isPending ?(
-                <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Deleting...
-                </>
-            ) : (
-                <>
-                <Trash2 className="w-5 h-5" />
-                Delete Product
-                </>
-            )
-        }
-        </Button>
-    )
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }

@@ -474,3 +474,38 @@ in the main page, i have used
 ```
 
 this helps in caching, and how do we know it is working? in the vercel logs we initially get `200` for fetch for home page, but then if we go to any other page like profile, and then we go back to home page we will get `304` which means that the page is being server from browser cache.
+
+
+## Problem and Fixes (25-12-2025)
+Yes i don't have a life which is why i am coding on Christmas. Coming to the problems i encountered, for todays push was that i mainly removed all the unnecessary APIs and replaced them with server actions. 
+
+
+**Caching**
+I improved it by using again json.stringfy because i was passing mongoose `_id` which was causing some issues while rendering.
+
+**Cart**
+I also implemented carts, the products can be added to carts, i also added snapshot price to show the price of product when it was added to cart so that if the price is changed in future it can be displayed to the user.
+
+I am facing the issue that lets say that product stock is 1, but i can add it multiple times in my cart and when i go to my cart it says item is not available, fix should be simple for this one.
+
+**Toast via Sooner**
+i tried to replace alert messages with toast Sooner which is better looking and is modern.
+
+**Server actions TRY/CATCH**
+I got to know that you are not supposed to use Try or Catch in server actions because its not API and unlike APIs you dont have to send HTTP response codes like success true or status 200.
+Man Express is good for these use cases but again the basic environment is different in both cases, i am learning this to understand serverless arch. Instead of using 
+
+```jsx
+return {
+  success: false,
+  status: 401,
+  message: "Unauthorized",
+};
+```
+You/I should be using 
+```jsx
+throw new Error("AUTH_REQUIRED");
+
+// in case the return is good
+return { ok: true };
+```
