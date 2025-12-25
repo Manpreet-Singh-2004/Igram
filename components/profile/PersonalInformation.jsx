@@ -15,27 +15,47 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateProfile } from "@/lib/actions/profile/action";
+import { toast } from "sonner";
+
 
 export default function PersonalInformation({ userData, setUserData }) {
   const [editable, setEditable] = useState(false);
   const [form, setForm] = useState(userData);
   const [loading, setLoading] = useState(false);
+  
 
   const { name, email, phone, addresses, role, sellerProfile } = form;
 
   // Save function
-  const handleSave = async () => {
+const handleSave = async () => {
+  try {
     setLoading(true);
+
     const result = await updateProfile(form);
 
-    if(result.success){
-      setForm(result.user);
-      setEditable(false);
-    } else{
-      alert("Error updating profile: " + result.error);
+    setForm(result.user);
+    setEditable(false);
+
+    toast.success("Profile updated successfully");
+  } catch (err) {
+    console.error("Update profile error:", err);
+
+    if (err?.message === "AUTH_REQUIRED") {
+      toast.error("Please sign in to update your profile");
+      return;
     }
+
+    if (err?.message === "USER_NOT_FOUND") {
+      toast.error("User account not found");
+      return;
+    }
+
+    toast.error("Failed to update profile. Please try again.");
+  } finally {
     setLoading(false);
-  };
+  }
+};
+
 
   // Helper: render an address object
   const renderAddressFields = (addr, idx, path = "addresses") => (
