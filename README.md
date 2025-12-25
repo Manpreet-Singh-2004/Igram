@@ -458,6 +458,24 @@ The i am facing now is that when we patch/edit the product, Imagekit keeps the o
 
 For the address, i am planning to use google maps to auto pick location and fill the fields.
 
+## Problem 13/12/2025 (Mongo GET API and ImageKit Server Action)
+
+Mongo API GET requests were increasing and to fix that i was thinking of serving the webpage via cache and after every 5 minutes the page will automatically fetch new products which means I have to use `api/products` because caching can be only done for **API calls**, not server actions.
+
+In the same way, ImageKit API has to be used because we are sending image which is binary and uses `multipart`. which means it has to run on a node base, hence it cannot be converted into a server action. This route is `api/upload-imagekit/route.js`. So we wont be converting that API to server actions
+
+### Fix
+in the main page, i have used 
+
+```jsx
+        const res = await fetch("/api/products",{
+          next: {revalidate: 300}
+        });
+```
+
+this helps in caching, and how do we know it is working? in the vercel logs we initially get `200` for fetch for home page, but then if we go to any other page like profile, and then we go back to home page we will get `304` which means that the page is being server from browser cache.
+
+
 ## Problem and Fixes (25-12-2025)
 Yes i don't have a life which is why i am coding on Christmas. Coming to the problems i encountered, for todays push was that i mainly removed all the unnecessary APIs and replaced them with server actions. 
 
