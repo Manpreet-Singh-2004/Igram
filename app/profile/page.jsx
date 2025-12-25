@@ -6,6 +6,7 @@ import ProductAdd from "@/components/profile/ProductAdd";
 import ProductCard from '@/components/Product/ProductCard'
 import Product from "@/models/Product.model";
 import User from "@/models/User.model";
+import GoToCartButton from "../../components/cart/GoToCartButton";
 
 export default async function ProfilePage() {
 
@@ -42,6 +43,7 @@ export default async function ProfilePage() {
           Welcome {serializedUser.name}, You are a {serializedUser.role}
         </h1>
 
+          <GoToCartButton />
         {/* Seller Section */}
         {serializedUser.role === "seller" && (
           <>
