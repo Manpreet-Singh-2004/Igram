@@ -1,48 +1,39 @@
-"use client"
-
-import { useState, useEffect } from 'react'
 import ProductCard from '../components/Product/ProductCard'
-import { Spinner } from '@/components/ui/spinner';
+import { getCachedHomeProducts } from '@/lib/actions/product/ProductCache';
 
-export default function Home(){
+export default async function Home() {
+    const products = await getCachedHomeProducts();
 
-    const [products, setProducts] = useState([]);
-
-    useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch("/api/products",{
-          next: {revalidate: 300}
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          console.log("Fetched products | Home Page");
-          setProducts(data.products);
-        }
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      }
+    // STRESS TEST: Handle empty states or service failures
+    if (!products || products.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+                <h2 className="text-xl font-semibold text-gray-600">No products available right now.</h2>
+                <p className="text-gray-400">Check back later for our latest arrivals.</p>
+            </div>
+        );
     }
 
-    fetchProducts();
-  }, []);
+    return (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {/* Hero Section / Headers */}
+            <header className="mb-10 space-y-2">
+                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900">
+                    Welcome Home
+                </h1>
+                <p className="text-lg text-gray-500 max-w-2xl">
+                    Discover our curated collection of favorites, handpicked just for you.
+                </p>
+            </header>
 
-    return(
-    <div className='px-6'>
-      <h1 className='text-3xl font-bold'>Welcome to Home page</h1>
-      <h2>All your fav products in one place</h2>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-        {products.length > 0 ? (
-          products.map((p) => <ProductCard key={p._id} product={p} />)
-        ) : (
-          <div>
-            <p>Loading</p>
-            <Spinner />
-          </div>
-        )}
-      </div>
-    </div>
+            {/* Product Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
+                {products.map((p) => (
+                    <div key={p._id.toString()} className="group transition-transform duration-300 hover:-translate-y-1">
+                        <ProductCard product={p} />
+                    </div>
+                ))}
+            </div>
+        </main>
     )
 }
