@@ -9,9 +9,11 @@ import {
   CarouselNext,
   CarouselPrevious
  } from "@/components/ui/carousel";
+ import {Button} from "@/components/ui/button"
 import { auth } from '@clerk/nextjs/server';
 import DeleteProductBtn from '@/components/Product/DeleteProductBtn';
 import ProductEdit from '../../../components/Product/ProductEditForm';
+import { ShoppingCart } from 'lucide-react';
 
 export default async function ProductPage({params}){
 
@@ -74,6 +76,8 @@ export default async function ProductPage({params}){
         <button className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
           Buy Now
         </button>
+
+        <Button> Add to Cart <ShoppingCart /> </Button>
 
           {isSeller &&(
               <DeleteProductBtn productId={product._id.toString()} />
