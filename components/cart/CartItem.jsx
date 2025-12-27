@@ -2,14 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { removeFromCart } from "../../lib/actions/cart/removeItemFromCart";
+import { updateCartItemQuantity } from "../../lib/actions/cart/updateQty";
 
 export default function CartItem({ item }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [qty, setQty] = useState(item.quantity);
 
   const handleRemove = () => {
     startTransition(async () => {
@@ -18,83 +20,135 @@ export default function CartItem({ item }) {
     });
   };
 
+  const handleChange = (nextQty) => {
+    if (nextQty < 1 || nextQty > item.stock) return;
+
+    setQty(nextQty);
+
+    startTransition(async () => {
+      try {
+        await updateCartItemQuantity(item.productId, nextQty);
+        router.refresh();
+      } catch {
+        setQty(item.quantity);
+      }
+    });
+  };
+
   return (
     <div
-      className={`flex gap-6 border rounded-xl p-4 items-center transition
+      className={`border rounded-xl p-4 transition
         ${item.isAvailable ? "hover:bg-muted" : "opacity-60"}
       `}
     >
-      {/* CLICKABLE PRODUCT AREA */}
-      {item.name ? (
-        <Link
-          href={`/product/${item.productId}`}
-          className="flex gap-6 items-center flex-1"
-        >
-          {/* Image */}
-          <div className="relative w-24 h-24 flex-shrink-0">
-            {item.image ? (
-              <Image
-                src={item.image}
-                alt={item.name}
-                fill
-                className="object-contain rounded-lg"
-              />
-            ) : (
-              <div className="w-full h-full bg-gray-200 rounded-lg" />
-            )}
-          </div>
-
-          {/* Product Info */}
-          <div>
-            <h2 className="font-semibold text-lg">{item.name}</h2>
-
-            {!item.isAvailable && (
-              <p className="text-sm text-red-500 mt-1">
-                This product is no longer available
-              </p>
-            )}
-
-            <p className="text-sm text-gray-500 mt-1">
-              Quantity: {item.quantity}
-            </p>
-
-            <div className="mt-2 flex items-center gap-3">
-              <span className="font-semibold">
-                ${item.livePrice.toFixed(2)}
-              </span>
-
-              {item.priceDelta !== 0 && (
-                <span
-                  className={`text-sm ${
-                    item.priceDelta > 0
-                      ? "text-red-500"
-                      : "text-green-600"
-                  }`}
-                >
-                  {item.priceDelta > 0
-                    ? `↑ $${item.priceDelta.toFixed(2)}`
-                    : `↓ $${Math.abs(item.priceDelta).toFixed(2)}`}
-                </span>
+      {/* TOP: product info */}
+      <div className="flex gap-4 items-center">
+        {item.name ? (
+          <Link
+            href={`/product/${item.productId}`}
+            className="flex gap-4 items-center flex-1"
+          >
+            <div className="relative w-20 h-20 flex-shrink-0">
+              {item.image ? (
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  fill
+                  className="object-contain rounded-lg"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 rounded-lg" />
               )}
             </div>
-          </div>
-        </Link>
-      ) : (
-        <div className="flex-1">
-          <h2 className="font-semibold text-lg">Product unavailable</h2>
-        </div>
-      )}
 
-      {/* ACTIONS (NOT INSIDE LINK) */}
-      <Button
-        clickable
-        onClick={handleRemove}
-        disabled={isPending}
-        variant="ghost"
-        className="text-red-500 hover:text-red-600 disabled:opacity-50"
+            <div>
+              <h2 className="font-semibold">{item.name}</h2>
+
+              {!item.isAvailable && (
+                <p className="text-sm text-red-500">
+                  This product is no longer available
+                </p>
+              )}
+
+              <div className="mt-1 flex items-center gap-3 text-sm">
+                <span className="font-semibold">
+                  ${item.livePrice.toFixed(2)}
+                </span>
+
+                {item.priceDelta !== 0 && (
+                  <span
+                    className={
+                      item.priceDelta > 0
+                        ? "text-red-500"
+                        : "text-green-600"
+                    }
+                  >
+                    {item.priceDelta > 0
+                      ? `↑ $${item.priceDelta.toFixed(2)}`
+                      : `↓ $${Math.abs(item.priceDelta).toFixed(2)}`}
+                  </span>
+                )}
+              </div>
+            </div>
+          </Link>
+        ) : (
+          <div className="flex-1 font-semibold">Product unavailable</div>
+        )}
+      </div>
+
+      {/* BOTTOM: actions */}
+      <div
+        className="
+          mt-4
+          flex flex-col gap-3
+          sm:flex-row sm:items-center sm:justify-between
+        "
       >
-        {isPending ? "Removing..." : "Remove"}
-      </Button>
+        {/* Quantity controls */}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            disabled={qty <= 1 || isPending}
+            onClick={() => handleChange(qty - 1)}
+          >
+            −
+          </Button>
+
+          <span className="min-w-[24px] text-center">{qty}</span>
+
+          <Button
+            variant="outline"
+            size="icon"
+            disabled={qty >= item.stock || isPending}
+            onClick={() => handleChange(qty + 1)}
+          >
+            +
+          </Button>
+        </div>
+
+        {/* Remove */}
+        <Button
+          onClick={handleRemove}
+          disabled={isPending}
+          variant="ghost"
+          className="    
+    bg-red-600 text-white
+    hover:bg-red-700
+
+    dark:bg-red-500
+    dark:hover:bg-red-600
+
+    disabled:bg-red-400
+    dark:disabled:bg-red-400
+
+    disabled:cursor-not-allowed
+    self-start sm:self-auto
+    "
+        >
+          {isPending ? "Removing..." : "Remove"}
+        </Button>
+      </div>
     </div>
   );
 }
