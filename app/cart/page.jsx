@@ -1,5 +1,7 @@
 import CartItem from "@/components/cart/CartItem";
 import { getCart } from "@/lib/actions/cart/getCart";
+import Link from "next/link";
+import { Button } from "../../components/ui/button";
 
 export default async function CartPage() {
   const cart = await getCart();
@@ -33,6 +35,15 @@ export default async function CartPage() {
           Subtotal: ${cart.subtotal.toFixed(2)}
         </p>
       </div>
+
+      <div className="mt-10 flex justify-end">
+        <Link href="/checkout">
+          <Button size="lg">
+            Go to Checkout
+          </Button>
+        </Link>
+      </div>
+
     </div>
   );
 }

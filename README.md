@@ -506,6 +506,238 @@ You/I should be using
 ```jsx
 throw new Error("AUTH_REQUIRED");
 
-// in case the return is good
+// in case the return is good, even this is not necessary
 return { ok: true };
 ```
+# Checkout & Order Creation – Implementation Summary
+
+This document summarizes the checkout architecture implemented so far, the problems encountered during development, and how each issue was resolved. The goal of this system is to create a robust, Stripe-ready checkout flow using Next.js App Router, Server Actions, MongoDB, and Clerk.
+
+✅ What Has Been Implemented So Far
+1. Cart System (Pre-existing)
+
+Cart stored in MongoDB (Cart model)
+
+Each cart item contains:
+
+productId
+
+quantity
+
+priceSnapshot (price at time of adding to cart, in CAD)
+
+Cart is mutable (users can change quantity/remove items)
+
+2. Checkout Entry Flow
+
+Route:
+
+/checkout
+
+
+Behavior:
+
+Calls a server action: createCheckoutOrder
+
+Does NOT render UI
+
+Creates a locked Order
+
+Redirects user to:
+
+/checkout/[orderId]
+
+
+This separation ensures checkout logic runs once and only once.
+
+3. Order Creation (createCheckoutOrder)
+
+This is the core server action.
+
+Responsibilities:
+
+Authenticate user (Clerk)
+
+Fetch user’s cart
+
+Re-fetch products from DB (do NOT trust cart data)
+
+Validate:
+
+Product still exists
+
+Stock is sufficient
+
+Calculate totals (in CAD):
+
+subtotal
+
+tax (fixed $2 CAD)
+
+total
+
+Create an Order:
+
+locked = true
+
+status = "pending"
+
+DO NOT:
+
+Touch Stripe
+
+Clear the cart
+
+Why this matters:
+
+Cart stays editable until payment succeeds
+
+Order becomes the single source of truth for payment
+
+4. Checkout Page (/checkout/[orderId])
+
+This page:
+
+Fetches the order using getOrderForCheckout
+
+Displays:
+
+Order summary (read-only)
+
+Stripe payment form (next step)
+
+Important rule:
+
+Checkout page reads from Order, NOT Cart
+
+## Errors Encountered & Why They Happened
+
+❌ Error 1: "Product no longer exists" (even though it did)
+
+Cause:
+
+MongoDB ObjectIds were inconsistently handled
+
+Map keys were strings, but lookups sometimes used ObjectIds
+
+Fix:
+
+Normalize all IDs using .toString() before:
+
+Building the product map
+
+Looking up products
+
+Lesson:
+
+MongoDB is flexible. JavaScript Maps are not.
+
+❌ Error 2: Cannot overwrite 'Order' model once compiled
+
+Cause:
+
+Incorrect model export:
+
+```jsx
+const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
+
+export default Order;
+```
+
+
+Fix:
+
+Use the correct Next.js-safe pattern:
+
+```jsx
+export default mongoose.models.Order || mongoose.model("Order", schema)
+```
+
+
+Lesson:
+
+Next.js hot reload + Mongoose requires guarded model creation.
+
+❌ Error 3: params is a Promise in /checkout/[orderId]
+
+Cause:
+
+In Next.js App Router, params is async
+
+Accessed synchronously as params.orderId
+
+Fix:
+
+`const { orderId } = await params;`
+
+
+Lesson:
+
+App Router params are lazy and async by design.
+
+❌ Error 4: Totals showed $1.02 instead of $102.00
+
+Cause:
+
+Backend stored prices in CAD
+
+Frontend was still dividing by 100 (cents-based formatting)
+
+Fix:
+
+Remove all `/ 100` from UI calculations
+
+Treat DB values as major currency units
+
+Lesson:
+
+Pick ONE currency unit internally and stick to it.
+
+❌ Error 5:
+
+Only plain objects can be passed to Client Components
+
+Cause:
+
+MongoDB ObjectIds were passed from Server Components to Client Components
+
+Client Components require JSON-serializable props
+
+Fix:
+
+Serialize the order before passing to client components:
+
+```bash
+_id: order._id.toString()
+productId: item.productId.toString()
+sellerId: item.sellerId.toString()
+```
+
+Lesson:
+
+Server → Client boundary must be pure JSON.
+
+🧠 Key Architectural Decisions (Intentional)
+Currency Handling
+
+All prices stored in CAD in DB
+
+Conversion to cents happens only when calling Stripe
+
+Prevents accidental double conversion bugs
+
+Order Locking
+
+Orders are locked at creation
+
+Prevents price/quantity changes mid-payment
+
+Makes payments auditable and safe
+
+Cart Clearing
+
+Cart is cleared only after payment success
+
+Never before
+
+Webhooks will handle this later
