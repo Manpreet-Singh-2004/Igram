@@ -741,3 +741,10 @@ Cart is cleared only after payment success
 Never before
 
 Webhooks will handle this later
+
+# Notes for future
+
+Use formData to send data from frontend to backend server action because Next now preffers to use it, to show loading states i can also use `useActionState` hook to show loading in form.
+FormData is used since HTML that is why it is more reliable.
+So try to avoid useState to send data back and forth.
+
