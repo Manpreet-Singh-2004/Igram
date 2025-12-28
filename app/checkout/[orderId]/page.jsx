@@ -1,6 +1,6 @@
 import {getOrderForCheckout} from "../../../lib/actions/checkout/getOrderForCheckout"
 import OrderSummary from '../../../components/checkout/OrderSummary'
-import StripePaymentForm from "../../../components/checkout/StripePaymentForm";
+import StripeElementWrapper from "../../../components/checkout/StripeElementWrapper"
 
 export default async function CheckoutPage({params}){
     const {orderId} = await params
@@ -30,7 +30,7 @@ export default async function CheckoutPage({params}){
     return(
         <div className='max-w-6xl mx-auto py-10 px-6 grid md:grid-cols-2 gap-8'>
             <OrderSummary order={safeOrder} />
-            <StripePaymentForm order={safeOrder} />
+            <StripeElementWrapper orderId={safeOrder._id} />
         </div>
     )
 }

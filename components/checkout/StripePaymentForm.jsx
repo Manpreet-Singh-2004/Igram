@@ -1,19 +1,50 @@
 "use client"
 
-export default function StripePaymentForm({order}){
-    return(
-            <div className="border rounded-xl p-6">
-      <h2 className="text-xl font-bold mb-4">Payment</h2>
+import {
+  useStripe,
+  useElements,
+  PaymentElement,
+} from "@stripe/react-stripe-js"
+import {useState} from "react"
 
-      <div className="h-32 border border-dashed flex items-center justify-center">
-        Stripe Elements will go here
-      </div>
+export default function StripePaymentForm(){
+  const stripe = useStripe()
+  const elements = useElements()
+
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleSubmit = async(e) =>{
+    e.preventDefault();
+    if(!stripe || !elements) return;
+
+    setLoading(true)
+    setError(null)
+
+    const {error} = await stripe.confirmPayment({
+      elements,
+      confirmParams:{
+        return_url: `${window.location.origin}/checkout/success`,
+      },
+    })
+    
+    if(error){
+      setError(error.message)
+      setLoading(false)
+    }
+  };
+
+  return(
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <button
-        className="mt-6 w-full bg-black text-white py-2 rounded"
+        disabled={!stripe || loading}
+        className="w-full bg-black text-white py-2 rounded disabled:opacity-50"
       >
-        Pay ${ (order.total / 100).toFixed(2) }
+        {loading ? "Processing…" : "Pay Now"}
       </button>
-    </div>
-    )
+    </form>
+  )
 }

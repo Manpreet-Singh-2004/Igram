@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const CouponSchema = new mongoose.Schema(
   {
     code: {
